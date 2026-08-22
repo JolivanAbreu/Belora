@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  /* Mesma identidade de marca do painel admin - ver Documento Comercial */
+  --color-ink: #2E1A47;
+  --color-ink-soft: #5B4A72;
+  --color-canvas: #FBF7F4;
+  --color-surface: #FFFFFF;
+  --color-line: #E8DFE3;
+  --color-clay: #C08977;
+  --color-clay-dark: #A66F5E;
+  --color-lilac: #C9A5D4;
+  --color-lilac-soft: #F1E6F3;
+  --color-sage: #7C9473;
+  --color-sage-soft: #EAF0E7;
+
+  --font-display: "Fraunces", "Georgia", serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.thin-scroll::-webkit-scrollbar { height: 5px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 999px; }
+.thin-scroll { scrollbar-width: thin; }
