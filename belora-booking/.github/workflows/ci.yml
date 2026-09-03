@@ -1,0 +1,35 @@
+name: Belora Booking - CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "belora-booking/**"
+  pull_request:
+    paths:
+      - "belora-booking/**"
+
+defaults:
+  run:
+    working-directory: belora-booking
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: belora-booking/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Rodar testes de componente
+        run: npm test
+
+      - name: Build de produção
+        run: npm run build

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Modal from "./Modal";
+import PhoneInput from "./PhoneInput";
 import api from "../lib/api";
 
 export default function NewAppointmentModal({ date, services, onClose, onCreated }) {
@@ -45,7 +46,7 @@ export default function NewAppointmentModal({ date, services, onClose, onCreated
             value={serviceId}
             onChange={(e) => setServiceId(e.target.value)}
             required
-            className="w-full rounded-lg border border-(--color-line) px-3.5 py-2.5 text-sm outline-none focus:border-(--color-clay)"
+            className="w-full rounded-xl bg-(--color-lilac-soft) border border-(--color-line) px-3.5 py-2.5 text-sm outline-none focus:border-(--color-clay)"
           >
             {services.map((s) => (
               <option key={s.id} value={s.id}>
@@ -62,7 +63,7 @@ export default function NewAppointmentModal({ date, services, onClose, onCreated
             required
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="w-full rounded-lg border border-(--color-line) px-3.5 py-2.5 text-sm outline-none focus:border-(--color-clay)"
+            className="w-full rounded-xl bg-(--color-lilac-soft) border border-(--color-line) px-3.5 py-2.5 text-sm outline-none focus:border-(--color-clay)"
           />
         </div>
 
@@ -73,19 +74,17 @@ export default function NewAppointmentModal({ date, services, onClose, onCreated
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-(--color-line) px-3.5 py-2.5 text-sm outline-none focus:border-(--color-clay)"
+            className="w-full rounded-xl bg-(--color-lilac-soft) border border-(--color-line) px-3.5 py-2.5 text-sm outline-none focus:border-(--color-clay)"
           />
         </div>
 
         <div>
           <label className="block text-xs font-medium text-(--color-ink-soft) mb-1.5">Telefone</label>
-          <input
-            type="tel"
+          <PhoneInput
             required
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+55 85 90000-0000"
-            className="w-full rounded-lg border border-(--color-line) px-3.5 py-2.5 text-sm outline-none focus:border-(--color-clay)"
+            onChange={setPhone}
+            className="w-full rounded-xl bg-(--color-lilac-soft) border border-(--color-line) px-3.5 py-2.5 text-sm outline-none focus:border-(--color-clay)"
           />
         </div>
 

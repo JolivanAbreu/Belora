@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const api = axios.create({ baseURL: "/api" });
+// Mesma lógica do painel admin - ver DEPLOY.md.
+const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || "/api" });
 
 export async function getTenantInfo(slug) {
   const { data } = await api.get(`/public/${slug}/info`);
@@ -25,6 +26,16 @@ export async function createAppointment(slug, { serviceId, startsAt, client }) {
     startsAt,
     client,
   });
+  return data;
+}
+
+export async function cancelAppointment(slug, appointmentId, token) {
+  const { data } = await api.post(`/public/${slug}/appointments/${appointmentId}/cancel`, { token });
+  return data;
+}
+
+export async function confirmPresence(slug, appointmentId, token) {
+  const { data } = await api.post(`/public/${slug}/appointments/${appointmentId}/confirm-presence`, { token });
   return data;
 }
 

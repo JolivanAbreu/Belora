@@ -1,0 +1,66 @@
+version: "3.8"
+
+# Sobe o Belora completo (API + painel admin + booking page + PostgreSQL)
+# numa única máquina (ex.: uma VPS própria). Ver DEPLOY.md para instruções
+# completas, incluindo a alternativa de hospedagem gerenciada (Render + Vercel).
+#
+# Pré-requisito: este arquivo espera as pastas belora-api/, belora-admin/ e
+# belora-booking/ como IRMÃS da pasta onde ele está (belora-deploy/). Ou seja,
+# a estrutura de pastas deve ficar:
+#
+#   belora/
+#   ├── belora-api/
+#   ├── belora-admin/
+#   ├── belora-booking/
+#   └── belora-deploy/   <- você está aqui (docker-compose.yml)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: belora
+      POSTGRES_PASSWORD: belora
+      POSTGRES_DB: belora_prod
+    volumes:
+      - belora_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build: ../belora-api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgres://belora:belora@postgres:5432/belora_prod
+      JWT_SECRET: ${JWT_SECRET:?defina um valor forte no .env do belora-deploy}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?defina um valor forte no .env do belora-deploy}
+      JWT_EXPIRES_IN: 1h
+      JWT_REFRESH_EXPIRES_IN: 30d
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+    ports:
+      - "3000:3000"
+
+  admin:
+    build:
+      context: ../belora-admin
+      args:
+        VITE_API_URL: ${PUBLIC_API_URL:?defina a URL pública da API no .env}
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+
+  booking:
+    build:
+      context: ../belora-booking
+      args:
+        VITE_API_URL: ${PUBLIC_API_URL:?defina a URL pública da API no .env}
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+
+volumes:
+  belora_pgdata:

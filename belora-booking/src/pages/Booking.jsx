@@ -6,6 +6,7 @@ import ProgressSteps from "../components/ProgressSteps";
 import ServiceList from "../components/ServiceList";
 import DateStrip from "../components/DateStrip";
 import TimeSlotGrid from "../components/TimeSlotGrid";
+import PhoneInput from "../components/PhoneInput";
 import NotFound from "./NotFound";
 
 export default function Booking() {
@@ -176,12 +177,10 @@ export default function Booking() {
                     <label className="block text-xs font-medium text-(--color-ink-soft) mb-1.5">
                       WhatsApp
                     </label>
-                    <input
-                      type="tel"
+                    <PhoneInput
                       required
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+55 85 90000-0000"
+                      onChange={setPhone}
                       className="w-full rounded-lg border border-(--color-line) px-3.5 py-2.5 text-sm bg-(--color-surface) outline-none focus:border-(--color-clay)"
                     />
                     <p className="text-[11px] text-(--color-ink-soft) mt-1">
@@ -215,6 +214,12 @@ export default function Booking() {
                 <p className="text-xs text-(--color-ink-soft)">
                   Você vai receber a confirmação no WhatsApp informado.
                 </p>
+                <a
+                  href={`/${slug}/cancelar/${confirmedAppointment.id}?token=${confirmedAppointment.cancellationToken}`}
+                  className="inline-block mt-4 text-xs text-(--color-ink-soft) underline hover:text-(--color-ink)"
+                >
+                  Precisa cancelar? Clique aqui
+                </a>
               </div>
             )}
           </>

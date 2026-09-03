@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { User } = require("../../models");
 const { AppError } = require("../../middlewares/errorHandler");
+const twoFactorService = require("./twoFactor.service");
 
 function signAccessToken(user) {
   return jwt.sign(
@@ -19,6 +20,17 @@ function signRefreshToken(user) {
   );
 }
 
+// Token de curta duração emitido entre a validação da senha e a validação
+// do código 2FA - não serve para acessar nenhuma rota protegida, só para
+// provar (em /auth/2fa/verify-login) que a senha já foi conferida.
+function signTwoFactorSessionToken(user) {
+  return jwt.sign(
+    { sub: user.id, purpose: "2fa_login" },
+    process.env.JWT_SECRET,
+    { expiresIn: "5m" }
+  );
+}
+
 async function login(email, password) {
   const user = await User.findOne({ where: { email } });
 
@@ -31,6 +43,40 @@ async function login(email, password) {
   const passwordMatches = await bcrypt.compare(password, user.passwordHash);
   if (!passwordMatches) throw invalidCredentials();
 
+  if (user.twoFactorEnabled) {
+    // Login em duas etapas: a senha já foi validada, mas os tokens de
+    // verdade só saem depois de /auth/2fa/verify-login com o código certo.
+    return {
+      twoFactorRequired: true,
+      twoFactorSessionToken: signTwoFactorSessionToken(user),
+    };
+  }
+
+  return {
+    accessToken: signAccessToken(user),
+    refreshToken: signRefreshToken(user),
+    tenantId: user.tenantId,
+  };
+}
+
+/**
+ * Segunda etapa do login quando o usuário tem 2FA ativo. Recebe o token de
+ * sessão emitido por login() e o código TOTP (ou de backup) digitado.
+ */
+async function verifyTwoFactorLogin(twoFactorSessionToken, code) {
+  let payload;
+  try {
+    payload = jwt.verify(twoFactorSessionToken, process.env.JWT_SECRET);
+  } catch {
+    throw new AppError(401, "INVALID_SESSION", "Sessão de login expirada. Faça login novamente.");
+  }
+  if (payload.purpose !== "2fa_login") {
+    throw new AppError(401, "INVALID_SESSION", "Sessão de login inválida.");
+  }
+
+  await twoFactorService.verifyTwoFactorCode(payload.sub, code);
+
+  const user = await User.findByPk(payload.sub);
   return {
     accessToken: signAccessToken(user),
     refreshToken: signRefreshToken(user),
@@ -56,4 +102,4 @@ async function hashPassword(plain) {
   return bcrypt.hash(plain, 10);
 }
 
-module.exports = { login, refresh, hashPassword };
+module.exports = { login, verifyTwoFactorLogin, refresh, hashPassword };

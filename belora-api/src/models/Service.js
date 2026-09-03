@@ -6,6 +6,7 @@ const Service = sequelize.define("Service", {
   tenantId: { type: DataTypes.UUID, allowNull: false },
   categoryId: { type: DataTypes.UUID, allowNull: true },
   name: { type: DataTypes.STRING, allowNull: false },
+  description: { type: DataTypes.TEXT, allowNull: true },
   durationMin: { type: DataTypes.INTEGER, allowNull: false, validate: { min: 5 } },
   price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
   active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },

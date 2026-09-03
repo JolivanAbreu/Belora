@@ -4,6 +4,7 @@ const controller = require("./auth.controller");
 const router = Router();
 
 router.post("/auth/login", controller.login);
+router.post("/auth/2fa/verify-login", controller.verifyTwoFactorLogin);
 router.post("/auth/refresh", controller.refresh);
 
 module.exports = router;

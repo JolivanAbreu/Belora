@@ -53,34 +53,58 @@ próprio React Router, sem precisar de um deploy separado por tenant.
 2. **Escolher dia e horário** — mostra apenas horários realmente disponíveis,
    calculados pelo mesmo endpoint usado no painel administrativo (RF-31,
    ver Arquitetura seção 5 sobre fonte única de disponibilidade)
-3. **Informar nome e telefone** — sem exigir criação de conta (RF-32)
-4. **Confirmação** — tela de sucesso; o lembrete por WhatsApp (RF-33) depende da
-   integração com o provedor, ainda pendente (ver checklist abaixo)
+3. **Informar nome e telefone** — sem exigir criação de conta (RF-32), com
+   máscara de telefone brasileira (`+55 (DD) 90000-0000`) via `react-imask`
+4. **Confirmação** — tela de sucesso, com link de cancelamento também
+   disponível diretamente na tela (RF-34)
+
+Duas telas adicionais, acessadas pelos links enviados nas mensagens de
+WhatsApp (não pela navegação normal do fluxo acima):
+
+- **`/:slug/cancelar/:appointmentId?token=...`** — cliente cancela o próprio
+  agendamento (RF-34). Só age mediante clique explícito num botão, nunca ao
+  simplesmente abrir a página - importante porque o WhatsApp gera uma
+  pré-visualização do link automaticamente (requisição GET), e isso não
+  pode disparar o cancelamento sozinho.
+- **`/:slug/confirmar/:appointmentId?token=...`** — cliente confirma
+  presença a partir do lembrete de 30min antes (RF-35), mesma lógica de
+  segurança da tela de cancelamento.
 
 Testado manualmente de ponta a ponta contra a API real, incluindo o caso de
-conflito (dois horários que se sobrepõem somem da lista após um agendamento) e
-o caso de slug inexistente (tela de "página não encontrada").
+conflito (dois horários que se sobrepõem somem da lista após um agendamento),
+o cancelamento/confirmação de presença via link, e o caso de slug inexistente
+(tela de "página não encontrada").
 
 ## Estrutura de pastas
 
 ```
 src/
-├── components/   # ProgressSteps, ServiceList, DateStrip, TimeSlotGrid
+├── components/   # ProgressSteps, ServiceList, DateStrip, TimeSlotGrid, PhoneInput
 ├── lib/          # cliente de API público (por slug), helpers de data
-└── pages/        # Booking (fluxo principal), NotFound
+└── pages/        # Booking (fluxo principal), CancelAppointment, ConfirmPresence, NotFound
 ```
 
 ## O que falta antes de produção
 
-- [ ] Cancelamento do agendamento pelo cliente via link enviado na confirmação (RF-34)
-      — hoje a tela de confirmação não gera esse link ainda.
-- [ ] Envio real de confirmação/lembrete por WhatsApp (depende da integração do
-      backend com o provedor — ver README da API).
+- [x] ~~Cancelamento do agendamento pelo cliente via link enviado na confirmação (RF-34)~~
+      — implementado: link de cancelamento seguro (token opaco) enviado na
+      confirmação por WhatsApp, e também exibido na própria tela de confirmação.
+- [x] ~~Confirmação de presença pelo cliente (RF-35)~~ — implementado, via
+      link enviado no lembrete de 30min antes.
+- [ ] Envio real de confirmação/lembrete por WhatsApp (a lógica já está pronta -
+      ver README da API; falta configurar uma instância real da Evolution API).
 - [x] ~~Fuso horário por tenant~~ — corrigido: a página busca o fuso do tenant
       via `GET /public/:slug/info` e formata todos os horários com ele
       (`date-fns-tz`), em vez de depender do fuso do navegador de quem acessa.
 - [ ] Identidade visual personalizada por tenant (logo, cores) — hoje toda
       booking page usa a identidade genérica do Belora, sem personalização
       por profissional (mencionado no Documento Comercial como item do roadmap).
-- [ ] Testes automatizados de interface (hoje a cobertura de testes do projeto
-      está toda no backend).
+- [x] ~~Testes automatizados de interface~~ — implementados via Vitest +
+      React Testing Library (helpers de data, máscara de telefone,
+      indicador de progresso). Rodando no CI antes do build.
+
+## Rodar os testes automatizados
+
+```bash
+npm test
+```

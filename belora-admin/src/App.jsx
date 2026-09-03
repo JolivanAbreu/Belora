@@ -2,9 +2,13 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import Agenda from "./pages/Agenda";
 import Servicos from "./pages/Servicos";
 import Clientes from "./pages/Clientes";
+import Configuracoes from "./pages/Configuracoes";
+import Notificacoes from "./pages/Notificacoes";
+import Relatorios from "./pages/Relatorios";
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -27,11 +31,15 @@ function AppRoutes() {
           </PrivateRoute>
         }
       >
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/agenda" element={<Agenda />} />
         <Route path="/servicos" element={<Servicos />} />
         <Route path="/clientes" element={<Clientes />} />
+        <Route path="/configuracoes" element={<Configuracoes />} />
+        <Route path="/notificacoes" element={<Notificacoes />} />
+        <Route path="/relatorios" element={<Relatorios />} />
       </Route>
-      <Route path="*" element={<Navigate to="/agenda" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }

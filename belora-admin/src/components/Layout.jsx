@@ -1,55 +1,89 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { BarChart3, Calendar, Sparkles, Users, Bell, Settings, LogOut, ExternalLink, LineChart } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { IconAgenda, IconServices, IconClients, IconLogout } from "./icons";
 
 const navItems = [
-  { to: "/agenda", label: "Agenda", Icon: IconAgenda },
-  { to: "/servicos", label: "Serviços", Icon: IconServices },
-  { to: "/clientes", label: "Clientes", Icon: IconClients },
+  { to: "/dashboard", label: "Visão geral", Icon: BarChart3 },
+  { to: "/agenda", label: "Agenda", Icon: Calendar },
+  { to: "/servicos", label: "Serviços", Icon: Sparkles },
+  { to: "/clientes", label: "Clientes", Icon: Users },
+  { to: "/relatorios", label: "Relatórios", Icon: LineChart },
+  { to: "/notificacoes", label: "Notificações", Icon: Bell },
+  { to: "/configuracoes", label: "Configurações", Icon: Settings },
 ];
+
+// URL base da booking page pública (app separado - ver DEPLOY.md). Em
+// desenvolvimento local, aponta para a porta padrão do belora-booking.
+const BOOKING_BASE_URL = import.meta.env.VITE_BOOKING_URL || "http://localhost:5174";
 
 export default function Layout() {
   const { tenant, logout } = useAuth();
+  const bookingUrl = tenant?.slug ? `${BOOKING_BASE_URL}/${tenant.slug}` : null;
 
   return (
-    <div className="flex min-h-screen bg-(--color-canvas)">
-      <aside className="w-64 shrink-0 bg-(--color-ink) text-white flex flex-col">
-        <div className="px-6 py-7">
-          <span className="font-display text-2xl italic tracking-tight">Belora</span>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-white/50 mt-1">
-            {tenant?.name || "Painel"}
-          </p>
+    <div className="min-h-screen wave-bg flex flex-col">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-(--color-line) px-4 lg:px-8 py-3 shadow-sm">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center justify-between w-full md:w-auto">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-(--color-ink) text-white flex items-center justify-center font-display font-bold text-xl shadow-md shrink-0">
+                B
+              </div>
+              <div>
+                <h1 className="font-display font-bold text-xl text-(--color-ink) leading-tight">
+                  Belora
+                </h1>
+                <p className="text-xs text-(--color-ink-soft) hidden sm:block">
+                  {tenant?.name}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <nav className="flex items-center gap-1.5 overflow-x-auto max-w-full py-1 bg-(--color-lilac-soft) p-1.5 rounded-2xl border border-(--color-line) thin-scroll">
+            {navItems.map(({ to, label, Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                    isActive
+                      ? "bg-(--color-ink) text-white shadow-sm"
+                      : "text-(--color-ink) hover:bg-(--color-line)/40"
+                  }`
+                }
+              >
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </nav>
+
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-(--color-ink) hover:bg-(--color-line)/40 transition-all shrink-0"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Sair</span>
+          </button>
         </div>
+      </header>
 
-        <nav className="flex-1 px-3 space-y-1">
-          {navItems.map(({ to, label, Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors ${
-                  isActive
-                    ? "bg-white/12 text-white font-medium"
-                    : "text-white/65 hover:bg-white/8 hover:text-white"
-                }`
-              }
-            >
-              <Icon className="w-[18px] h-[18px]" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
+      {bookingUrl && (
+        <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-3">
+          <a
+            href={bookingUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-(--color-ink) hover:underline"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Ver página de agendamento da cliente
+          </a>
+        </div>
+      )}
 
-        <button
-          onClick={logout}
-          className="mx-3 mb-6 flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm text-white/60 hover:bg-white/8 hover:text-white transition-colors"
-        >
-          <IconLogout className="w-[18px] h-[18px]" />
-          Sair
-        </button>
-      </aside>
-
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         <Outlet />
       </main>
     </div>

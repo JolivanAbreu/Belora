@@ -7,6 +7,25 @@ const User = sequelize.define("User", {
   email: { type: DataTypes.STRING, allowNull: false, unique: true },
   passwordHash: { type: DataTypes.STRING, allowNull: false },
   role: { type: DataTypes.ENUM("admin", "colaborador"), allowNull: false, defaultValue: "admin" },
+  twoFactorSecret: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    // Segredo TOTP em base32. Gravado assim que o admin inicia o setup
+    // (POST /auth/2fa/setup), mas só passa a valer para login depois de
+    // confirmado via POST /auth/2fa/enable (ver twoFactorEnabled).
+  },
+  twoFactorEnabled: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
+  twoFactorBackupCodes: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    // Array de códigos de backup, armazenados como HASH (bcrypt), nunca em
+    // texto plano - mesmo padrão de senha. Cada código só pode ser usado
+    // uma vez (é removido do array ao ser consumido).
+  },
 }, {
   tableName: "users",
   timestamps: true,

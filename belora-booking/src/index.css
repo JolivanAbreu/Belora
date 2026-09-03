@@ -1,21 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  /* Mesma identidade de marca do painel admin - ver Documento Comercial */
-  --color-ink: #2E1A47;
-  --color-ink-soft: #5B4A72;
-  --color-canvas: #FBF7F4;
-  --color-surface: #FFFFFF;
-  --color-line: #E8DFE3;
-  --color-clay: #C08977;
-  --color-clay-dark: #A66F5E;
-  --color-lilac: #C9A5D4;
-  --color-lilac-soft: #F1E6F3;
-  --color-sage: #7C9473;
-  --color-sage-soft: #EAF0E7;
+  /* Paleta "Belora Rosa Quartzo" - ver design de referência do usuário
+     (github.com/JolivanAbreu/Frontend/tree/main/Belora) */
+  --color-ink: #9E6F71;        /* rosa antigo escuro - texto/marca/botões primários */
+  --color-ink-soft: #A9797B;   /* variante suave, para texto secundário */
+  --color-canvas: #F5E3E3;     /* rosa pastel ajustado (mais escuro) - fundo da página */
+  --color-surface: #FFFFFF;    /* branco - cards */
+  --color-line: #EBC8C8;       /* rosa quartzo - bordas/divisores */
+  --color-clay: #D9A5A7;       /* destaque suave - foco/hover leve */
+  --color-clay-dark: #7A5254;  /* hover escuro dos botões primários */
+  --color-lilac: #F3D9DA;      /* chip/tag claro */
+  --color-lilac-soft: #FBF1F1; /* fundo suave (inputs, resumo, seção alternada) */
 
-  --font-display: "Fraunces", "Georgia", serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  --font-display: "Outfit", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
 body {
@@ -28,6 +27,12 @@ body {
   font-family: var(--font-display);
 }
 
-.thin-scroll::-webkit-scrollbar { height: 5px; }
+/* Fundo pontilhado sutil ("wave"), como no design de referência */
+.wave-bg {
+  background-color: var(--color-canvas);
+  background-image: radial-gradient(var(--color-line) 0.75px, transparent 0.75px);
+  background-size: 16px 16px;
+}
+
+.thin-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
 .thin-scroll::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 999px; }
-.thin-scroll { scrollbar-width: thin; }

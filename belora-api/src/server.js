@@ -1,6 +1,7 @@
 require("dotenv").config();
 const app = require("./app");
 const sequelize = require("./config/database");
+const { scheduleReminders } = require("./jobs/reminders.job");
 
 const PORT = process.env.PORT || 3000;
 
@@ -11,6 +12,8 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`Belora API rodando na porta ${PORT}`);
   });
+
+  scheduleReminders();
 }
 
 start().catch((err) => {

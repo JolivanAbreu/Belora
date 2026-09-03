@@ -1,6 +1,10 @@
 import axios from "axios";
 
-const api = axios.create({ baseURL: "/api" });
+// Em desenvolvimento, usa o proxy do Vite (vite.config.js) para "/api".
+// Em produção (build estático), não existe esse proxy - a URL completa da
+// API precisa vir de uma variável de ambiente definida no host (Vercel,
+// Netlify, etc.) - ver DEPLOY.md.
+const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || "/api" });
 
 function getTokens() {
   return {

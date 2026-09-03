@@ -2,6 +2,7 @@ const { Op } = require("sequelize");
 const { fromZonedTime } = require("date-fns-tz");
 const { sequelize, Appointment, AvailabilityBlock, Service, Client, Tenant } = require("../../models");
 const { AppError } = require("../../middlewares/errorHandler");
+const notificationsService = require("../notifications/notifications.service");
 
 /**
  * Interpreta uma string de data/hora recebida da API.
@@ -39,7 +40,9 @@ function parseTenantDateTime(value, timezone) {
  * @param {object} input - { serviceId, startsAt, clientId? , client?: { name, phone } }
  */
 async function createAppointment(tenantId, input) {
-  return sequelize.transaction(async (t) => {
+  let context;
+
+  const appointment = await sequelize.transaction(async (t) => {
     // Serializa criação de agendamentos deste tenant durante a transação
     await sequelize.query("SELECT pg_advisory_xact_lock(hashtext(:tenantId))", {
       replacements: { tenantId },
@@ -95,7 +98,7 @@ async function createAppointment(tenantId, input) {
       throw new AppError(409, "SLOT_BLOCKED", "Este horário está bloqueado na agenda.");
     }
 
-    const appointment = await Appointment.create({
+    const created = await Appointment.create({
       tenantId,
       clientId: client.id,
       serviceId: service.id,
@@ -104,8 +107,23 @@ async function createAppointment(tenantId, input) {
       status: "confirmado",
     }, { transaction: t });
 
-    return appointment;
+    context = { tenant, service, client };
+    return created;
   });
+
+  // Fora da transação (já commitada com sucesso). O envio da confirmação
+  // por WhatsApp roda em "fire-and-forget": não bloqueia a resposta da API
+  // esperando o provedor externo, e uma falha de envio nunca desfaz um
+  // agendamento que já foi criado com sucesso (ver Documento de
+  // Arquitetura - notificações são desacopladas da criação do agendamento).
+  appointment.Tenant = context.tenant;
+  appointment.Service = context.service;
+  appointment.Client = context.client;
+  notificationsService.sendAndLog(appointment, "confirmation").catch((err) => {
+    console.error("Falha ao enviar confirmação por WhatsApp:", err);
+  });
+
+  return appointment;
 }
 
 async function resolveClient(tenantId, input, t) {
@@ -148,6 +166,86 @@ async function cancelAppointment(tenantId, appointmentId) {
   return appointment;
 }
 
+/**
+ * Cancelamento pelo CLIENTE FINAL (RF-34), via link enviado na confirmação
+ * por WhatsApp - não exige login, apenas o token opaco gerado junto com o
+ * agendamento (ver Appointment.cancellationToken). tenantId ainda vem do
+ * slug validado pelo publicTenantMiddleware, nunca de um parâmetro solto.
+ */
+async function cancelAppointmentByToken(tenantId, appointmentId, token) {
+  const appointment = await Appointment.findOne({ where: { id: appointmentId, tenantId } });
+  if (!appointment) {
+    throw new AppError(404, "APPOINTMENT_NOT_FOUND", "Agendamento não encontrado.");
+  }
+  if (!token || appointment.cancellationToken !== token) {
+    throw new AppError(403, "INVALID_CANCELLATION_TOKEN", "Link de cancelamento inválido.");
+  }
+  if (appointment.status === "cancelado") {
+    throw new AppError(409, "ALREADY_CANCELLED", "Este agendamento já estava cancelado.");
+  }
+  appointment.status = "cancelado";
+  await appointment.save();
+  return appointment;
+}
+
+/**
+ * Confirmação de presença pelo cliente (via link enviado no lembrete de
+ * 30min antes). Usa o mesmo token de cancelamento como chave de
+ * autorização - não expõe nenhum dado novo, só sinaliza pro admin que o
+ * cliente confirmou que vai comparecer.
+ */
+async function confirmPresenceByToken(tenantId, appointmentId, token) {
+  const appointment = await Appointment.findOne({ where: { id: appointmentId, tenantId } });
+  if (!appointment) {
+    throw new AppError(404, "APPOINTMENT_NOT_FOUND", "Agendamento não encontrado.");
+  }
+  if (!token || appointment.cancellationToken !== token) {
+    throw new AppError(403, "INVALID_CANCELLATION_TOKEN", "Link inválido.");
+  }
+  if (appointment.status === "cancelado") {
+    throw new AppError(409, "ALREADY_CANCELLED", "Este agendamento já foi cancelado.");
+  }
+  appointment.presenceConfirmedAt = new Date();
+  await appointment.save();
+  return appointment;
+}
+
+/**
+ * Exclusão PERMANENTE de um agendamento (diferente de cancelAppointment,
+ * que só muda o status para "cancelado" preservando o histórico). Usada
+ * quando o admin realmente quer remover um registro (ex.: engano de
+ * cadastro), não apenas marcar como cancelado. Remove também as
+ * notificações associadas via ON DELETE CASCADE (ver Modelo de Dados).
+ */
+async function deleteAppointmentPermanently(tenantId, appointmentId) {
+  const appointment = await Appointment.findOne({ where: { id: appointmentId, tenantId } });
+  if (!appointment) {
+    throw new AppError(404, "APPOINTMENT_NOT_FOUND", "Agendamento não encontrado para este tenant.");
+  }
+  await appointment.destroy();
+}
+
+const VALID_STATUSES = ["confirmado", "cancelado", "concluido", "nao_compareceu"];
+
+/**
+ * Atualiza o status de um agendamento (RF-25 - complementa o cancelamento):
+ * permite ao admin marcar um atendimento passado como "concluído" ou
+ * "não compareceu", o que alimenta os relatórios de faturamento e taxa de
+ * não comparecimento (ver módulo reports).
+ */
+async function updateAppointmentStatus(tenantId, appointmentId, status) {
+  if (!VALID_STATUSES.includes(status)) {
+    throw new AppError(400, "INVALID_STATUS", `Status deve ser um de: ${VALID_STATUSES.join(", ")}.`);
+  }
+  const appointment = await Appointment.findOne({ where: { id: appointmentId, tenantId } });
+  if (!appointment) {
+    throw new AppError(404, "APPOINTMENT_NOT_FOUND", "Agendamento não encontrado para este tenant.");
+  }
+  appointment.status = status;
+  await appointment.save();
+  return appointment;
+}
+
 async function createAvailabilityBlock(tenantId, { startsAt, endsAt, reason }) {
   const tenant = await Tenant.findByPk(tenantId);
   if (!tenant) throw new AppError(404, "TENANT_NOT_FOUND", "Tenant não encontrado.");
@@ -165,6 +263,34 @@ async function createAvailabilityBlock(tenantId, { startsAt, endsAt, reason }) {
     throw new AppError(400, "INVALID_RANGE", "O horário final deve ser após o horário inicial.");
   }
   return AvailabilityBlock.create({ tenantId, startsAt: start, endsAt: end, reason });
+}
+
+async function updateAvailabilityBlock(tenantId, blockId, { startsAt, endsAt, reason }) {
+  const block = await AvailabilityBlock.findOne({ where: { id: blockId, tenantId } });
+  if (!block) {
+    throw new AppError(404, "BLOCK_NOT_FOUND", "Bloqueio não encontrado para este tenant.");
+  }
+
+  const tenant = await Tenant.findByPk(tenantId);
+
+  let start = block.startsAt;
+  let end = block.endsAt;
+  try {
+    if (startsAt !== undefined) start = parseTenantDateTime(startsAt, tenant.timezone);
+    if (endsAt !== undefined) end = parseTenantDateTime(endsAt, tenant.timezone);
+  } catch {
+    throw new AppError(400, "INVALID_DATE", "Data/hora inválida.");
+  }
+
+  if (start >= end) {
+    throw new AppError(400, "INVALID_RANGE", "O horário final deve ser após o horário inicial.");
+  }
+
+  block.startsAt = start;
+  block.endsAt = end;
+  if (reason !== undefined) block.reason = reason;
+  await block.save();
+  return block;
 }
 
 async function deleteAvailabilityBlock(tenantId, blockId) {
@@ -189,7 +315,12 @@ module.exports = {
   createAppointment,
   listAppointments,
   cancelAppointment,
+  cancelAppointmentByToken,
+  confirmPresenceByToken,
+  deleteAppointmentPermanently,
+  updateAppointmentStatus,
   createAvailabilityBlock,
+  updateAvailabilityBlock,
   deleteAvailabilityBlock,
   listAvailabilityBlocks,
 };

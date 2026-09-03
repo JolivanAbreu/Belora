@@ -24,6 +24,22 @@ const Tenant = sequelize.define("Tenant", {
     // e horários informados por admin/cliente como hora local (ver Segurança
     // & Arquitetura - antes desta correção, tudo era tratado como UTC puro).
   },
+  address: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    // Endereço em texto livre, exibido nas mensagens de WhatsApp (RF-33/50/52)
+    // via o placeholder {endereco} nos templates - ver messageTemplates.
+  },
+  messageTemplates: {
+    type: DataTypes.JSONB,
+    allowNull: false,
+    defaultValue: {},
+    // Templates de mensagem editáveis pelo admin (tela Configurações), por
+    // tipo de notificação. Chaves ausentes usam o texto padrão do sistema
+    // (ver DEFAULT_MESSAGE_TEMPLATES em notifications.service.js).
+    // Placeholders disponíveis: {cliente} {servico} {data} {hora}
+    // {estabelecimento} {endereco} {link_cancelamento} {link_confirmacao}
+  },
   planId: { type: DataTypes.UUID, allowNull: true },
 }, {
   tableName: "tenants",
