@@ -39,8 +39,7 @@ export default function Dashboard() {
     0
   );
 
-  // Taxa de ocupação: minutos agendados hoje / minutos totais de expediente hoje,
-  // usando o horário de funcionamento real do tenant (ver Configurações).
+  // Minutos agendados sobre o total de minutos de expediente do dia.
   const todayKey = WEEKDAY_KEYS[new Date().getDay()];
   const todayRanges = tenant?.businessHours?.[todayKey] || [];
   const availableMinutes = todayRanges.reduce((sum, [start, end]) => {

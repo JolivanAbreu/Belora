@@ -12,8 +12,7 @@ const navItems = [
   { to: "/configuracoes", label: "Configurações", Icon: Settings },
 ];
 
-// URL base da booking page pública (app separado - ver DEPLOY.md). Em
-// desenvolvimento local, aponta para a porta padrão do belora-booking.
+// A booking page é um app separado, com sua própria URL.
 const BOOKING_BASE_URL = import.meta.env.VITE_BOOKING_URL || "http://localhost:5174";
 
 export default function Layout() {

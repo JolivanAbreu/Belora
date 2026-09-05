@@ -1,13 +1,8 @@
-/**
- * Middleware global de tratamento de erros.
- * Deve ser registrado por último no app.js (express-async-errors encaminha
- * erros de rotas async para cá automaticamente).
- */
+// Registrado por último em app.js. O express-async-errors encaminha erros
+// de rotas async para cá automaticamente.
 function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
   if (err.status) {
-    // Erros de negócio esperados (409 de conflito, 404, 400, ...) não devem
-    // poluir o log/Sentry como se fossem falha do sistema - apenas erros
-    // 5xx inesperados são registrados como erro real.
+    // Erros de negócio esperados não poluem o log; só 5xx são registrados.
     if (err.status >= 500) console.error(err);
     return res.status(err.status).json({ error: { code: err.code || "ERROR", message: err.message } });
   }
@@ -21,7 +16,7 @@ function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-va
   return res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "Erro interno do servidor." } });
 }
 
-/** Helper para lançar erros com status/code a partir dos services/controllers. */
+// Erro com status e código HTTP, lançado pelos services.
 class AppError extends Error {
   constructor(status, code, message) {
     super(message);

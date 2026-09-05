@@ -1,9 +1,6 @@
 import axios from "axios";
 
-// Em desenvolvimento, usa o proxy do Vite (vite.config.js) para "/api".
-// Em produção (build estático), não existe esse proxy - a URL completa da
-// API precisa vir de uma variável de ambiente definida no host (Vercel,
-// Netlify, etc.) - ver DEPLOY.md.
+// Em desenvolvimento usa o proxy do Vite; em produção, VITE_API_URL.
 const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || "/api" });
 
 function getTokens() {
@@ -33,8 +30,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Renova o accessToken automaticamente uma vez em caso de 401, antes de
-// desistir e mandar o usuário de volta para o login.
+// Tenta renovar o accessToken uma vez em caso de 401 antes de deslogar.
 let isRefreshing = null;
 
 api.interceptors.response.use(

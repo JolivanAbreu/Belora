@@ -6,20 +6,11 @@ const { AppError } = require("../../middlewares/errorHandler");
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const SLOT_GRANULARITY_MIN = 15; // granularidade dos horários candidatos exibidos ao cliente
 
-/**
- * Calcula os horários disponíveis para um serviço, em uma data específica,
- * para um tenant.
- *
- * ESTA É A FONTE ÚNICA DA VERDADE sobre disponibilidade (ver Referência de
- * API, seção 5, e Arquitetura, seção 5): tanto o painel admin quanto a
- * booking page pública chamam esta mesma função, nunca reimplementam a
- * lógica de disponibilidade separadamente no frontend.
- *
- * Fuso horário: `date` é sempre um dia de calendário LOCAL do tenant (ex.:
- * "2026-08-24"), e os horários em `tenant.businessHours` também são hora
- * local. Toda conversão para instante UTC (o que fica de fato gravado e
- * comparado no banco) passa por `fromZonedTime`, usando `tenant.timezone`.
- */
+// Fonte única da verdade sobre disponibilidade: painel admin e booking page
+// chamam esta mesma função.
+//
+// `date` e os horários em `tenant.businessHours` são sempre hora local do
+// tenant; a conversão para instante UTC passa por fromZonedTime.
 async function getAvailableSlots({ tenantId, serviceId, date }) {
   const service = await Service.findOne({ where: { id: serviceId, tenantId, active: true } });
   if (!service) {
@@ -33,19 +24,18 @@ async function getAvailableSlots({ tenantId, serviceId, date }) {
 
   const tz = tenant.timezone;
 
-  // Dia de calendário local do tenant, expresso como instantes UTC (para
-  // comparar com starts_at/ends_at gravados no banco, que são sempre UTC).
+  // Dia local do tenant expresso em instantes UTC, para comparar com os
+  // valores gravados no banco.
   const dayStart = fromZonedTime(`${date}T00:00:00`, tz);
   const dayEnd = fromZonedTime(`${date}T23:59:59.999`, tz);
 
-  // Dia da semana é um fato de calendário puro (não depende de timezone):
-  // extraído diretamente dos componentes Y-M-D da string `date`.
+  // Dia da semana não depende de fuso: vem direto dos componentes da data.
   const [year, month, day] = date.split("-").map(Number);
   const weekdayKey = WEEKDAY_KEYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
   const ranges = tenant.businessHours?.[weekdayKey] || [];
 
   if (ranges.length === 0) {
-    return []; // tenant fechado nesse dia da semana
+    return [];
   }
 
   const [existingAppointments, blocks] = await Promise.all([

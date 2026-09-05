@@ -6,12 +6,7 @@ const PROVIDERS = {
   evolution: evolutionApiProvider,
 };
 
-/**
- * Retorna o provedor de WhatsApp ativo, escolhido via WHATSAPP_PROVIDER no
- * .env. Padrão: "console" (seguro, não exige credenciais - ver
- * consoleProvider.js). Trocar para "evolution" quando houver uma instância
- * real da Evolution API configurada.
- */
+// Provedor ativo definido por WHATSAPP_PROVIDER. Padrão "console".
 function getWhatsAppProvider() {
   const name = process.env.WHATSAPP_PROVIDER || "console";
   const provider = PROVIDERS[name];

@@ -16,8 +16,7 @@ export default function NewAppointmentModal({ date, services, onClose, onCreated
     setError("");
     setSaving(true);
     try {
-      // Hora LOCAL do tenant, sem "Z" - o backend interpreta usando
-      // tenant.timezone (ver parseTenantDateTime em appointments.service.js).
+      // Hora local do tenant, sem "Z": o backend converte usando o fuso.
       const startsAt = `${date}T${time}:00`;
       await api.post("/appointments", {
         serviceId,

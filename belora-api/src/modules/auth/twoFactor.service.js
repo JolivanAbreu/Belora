@@ -19,12 +19,8 @@ function buildTotp(email, base32Secret) {
   });
 }
 
-/**
- * Inicia a configuração de 2FA: gera um novo segredo TOTP e devolve o QR
- * code para escanear num app autenticador (Google Authenticator, Authy,
- * etc.). O segredo fica gravado no usuário, mas 2FA só passa a ser exigido
- * no login depois da confirmação via enableTwoFactor.
- */
+// Gera o segredo e o QR code. O 2FA só passa a valer no login após a
+// confirmação em enableTwoFactor.
 async function setupTwoFactor(userId) {
   const user = await User.findByPk(userId);
   if (!user) throw new AppError(404, "USER_NOT_FOUND", "Usuário não encontrado.");
@@ -47,11 +43,8 @@ function generateBackupCodes() {
   );
 }
 
-/**
- * Confirma o setup: valida o código de 6 dígitos gerado a partir do
- * segredo pendente e, se bater, ativa o 2FA de fato e gera os códigos de
- * backup (mostrados ao admin uma única vez, em texto puro).
- */
+// Valida o código do app autenticador e ativa o 2FA, retornando os códigos
+// de backup em texto puro (exibidos ao usuário uma única vez).
 async function enableTwoFactor(userId, token) {
   const user = await User.findByPk(userId);
   if (!user || !user.twoFactorSecret) {
@@ -74,10 +67,7 @@ async function enableTwoFactor(userId, token) {
   return { backupCodes };
 }
 
-/**
- * Desativa o 2FA - exige a senha atual como confirmação, já que remove uma
- * camada de segurança da conta.
- */
+// Exige a senha atual, já que remove uma camada de segurança da conta.
 async function disableTwoFactor(userId, password) {
   const user = await User.findByPk(userId);
   if (!user) throw new AppError(404, "USER_NOT_FOUND", "Usuário não encontrado.");
@@ -93,12 +83,7 @@ async function disableTwoFactor(userId, password) {
   await user.save();
 }
 
-/**
- * Verifica um código no momento do login (segunda etapa, depois da senha).
- * Aceita tanto um código TOTP de 6 dígitos quanto um código de backup - se
- * for um código de backup válido, ele é consumido (removido da lista) para
- * não poder ser reaproveitado.
- */
+// Aceita código TOTP ou de backup. Códigos de backup são consumidos no uso.
 async function verifyTwoFactorCode(userId, code) {
   const user = await User.findByPk(userId);
   if (!user || !user.twoFactorEnabled) {
@@ -111,7 +96,7 @@ async function verifyTwoFactorCode(userId, code) {
     return true;
   }
 
-  // Não era um código TOTP válido - tenta como código de backup.
+  // Não é um TOTP válido: tenta como código de backup.
   const backupCodes = user.twoFactorBackupCodes || [];
   for (let i = 0; i < backupCodes.length; i++) {
     const matches = await bcrypt.compare(code, backupCodes[i]);

@@ -27,8 +27,6 @@ export function AuthProvider({ children }) {
     const { data } = await api.post("/auth/login", { email, password });
 
     if (data.twoFactorRequired) {
-      // Login em duas etapas: a senha já foi validada no backend, mas os
-      // tokens de verdade só saem depois do código 2FA (ver completeTwoFactorLogin).
       return { twoFactorRequired: true, twoFactorSessionToken: data.twoFactorSessionToken };
     }
 
@@ -54,17 +52,14 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
-  // Usado pela tela de Configurações após ativar/desativar 2FA, para
-  // refletir o novo status sem precisar deslogar e logar de novo.
+  // Reflete o novo status de 2FA sem exigir novo login.
   async function refreshUser() {
     const { data } = await api.get("/auth/me");
     setUser(data);
     return data;
   }
 
-  // Usado pela tela de Configurações após salvar alterações do tenant
-  // (nome, slug, horários, fuso), para refletir os dados novos em toda a
-  // aplicação (ex.: link "Ver página de agendamento" no Layout).
+  // Reflete alterações do tenant em toda a aplicação após salvar.
   async function refreshTenant() {
     const { data } = await api.get("/tenant/me");
     setTenant(data);

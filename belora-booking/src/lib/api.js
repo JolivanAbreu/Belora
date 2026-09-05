@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// Mesma lógica do painel admin - ver DEPLOY.md.
+// Em desenvolvimento usa o proxy do Vite; em produção, VITE_API_URL.
 const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || "/api" });
 
 export async function getTenantInfo(slug) {

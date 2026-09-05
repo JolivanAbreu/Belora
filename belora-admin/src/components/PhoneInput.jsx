@@ -1,15 +1,7 @@
 import { IMaskInput } from "react-imask";
 
-/**
- * Campo de telefone/WhatsApp com máscara brasileira (+55 (DD) 90000-0000).
- * Aceita props de `value`/`onChange` como um input controlado normal, para
- * minimizar mudanças nos formulários que já usavam <input type="tel">.
- *
- * O valor mascarado (com parênteses, hífen, etc.) é o que fica salvo -
- * o backend trata telefone como texto livre (Client.phone é STRING sem
- * validação de formato), então não há necessidade de "desmascarar" antes
- * de enviar.
- */
+// Campo de telefone com máscara brasileira. O valor mascarado é o que fica
+// salvo: o backend trata telefone como texto livre.
 export default function PhoneInput({ value, onChange, className, required, placeholder }) {
   return (
     <IMaskInput

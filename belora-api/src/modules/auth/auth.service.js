@@ -20,9 +20,8 @@ function signRefreshToken(user) {
   );
 }
 
-// Token de curta duração emitido entre a validação da senha e a validação
-// do código 2FA - não serve para acessar nenhuma rota protegida, só para
-// provar (em /auth/2fa/verify-login) que a senha já foi conferida.
+// Token de curta duração que prova apenas que a senha já foi validada.
+// Não dá acesso a nenhuma rota protegida.
 function signTwoFactorSessionToken(user) {
   return jwt.sign(
     { sub: user.id, purpose: "2fa_login" },
@@ -34,8 +33,7 @@ function signTwoFactorSessionToken(user) {
 async function login(email, password) {
   const user = await User.findOne({ where: { email } });
 
-  // Mensagem de erro genérica de propósito: não revelar se o e-mail existe
-  // (ver Plano de Testes, TC-20 - evitar enumeração de contas).
+  // Mensagem genérica de propósito, para não revelar se o e-mail existe.
   const invalidCredentials = () => new AppError(401, "INVALID_CREDENTIALS", "E-mail ou senha inválidos.");
 
   if (!user) throw invalidCredentials();
@@ -44,8 +42,6 @@ async function login(email, password) {
   if (!passwordMatches) throw invalidCredentials();
 
   if (user.twoFactorEnabled) {
-    // Login em duas etapas: a senha já foi validada, mas os tokens de
-    // verdade só saem depois de /auth/2fa/verify-login com o código certo.
     return {
       twoFactorRequired: true,
       twoFactorSessionToken: signTwoFactorSessionToken(user),
@@ -59,10 +55,7 @@ async function login(email, password) {
   };
 }
 
-/**
- * Segunda etapa do login quando o usuário tem 2FA ativo. Recebe o token de
- * sessão emitido por login() e o código TOTP (ou de backup) digitado.
- */
+// Segunda etapa do login quando o usuário tem 2FA ativo.
 async function verifyTwoFactorLogin(twoFactorSessionToken, code) {
   let payload;
   try {

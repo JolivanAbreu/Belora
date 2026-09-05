@@ -30,10 +30,7 @@ export function formatFullDate(date) {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-// Formata no fuso horário do TENANT, não no fuso de quem está com o celular
-// na mão - importante porque um horário pode ser marcado por alguém em outra
-// cidade/fuso para a pessoa que vai ao atendimento (ver correção de fuso
-// horário no backend, availability.service.js).
+// Formata no fuso do tenant, não no fuso do dispositivo de quem acessa.
 export function formatTime(isoString, timezone) {
   return formatInTimeZone(isoString, timezone, "HH:mm");
 }

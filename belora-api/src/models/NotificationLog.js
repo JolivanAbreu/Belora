@@ -10,9 +10,7 @@ const NotificationLog = sequelize.define("NotificationLog", {
     type: DataTypes.ENUM("confirmation", "reminder_24h", "reminder_2h", "reminder_30min"),
     allowNull: false,
     defaultValue: "confirmation",
-    // Usado tanto para exibir o motivo do envio na tela de Notificações
-    // quanto para evitar reenvio duplicado do mesmo lembrete pelo job de
-    // varredura (ver src/jobs/reminders.job.js).
+    // Evita reenvio duplicado do mesmo lembrete pelo job de varredura.
   },
   sentAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
 }, {

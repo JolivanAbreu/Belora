@@ -66,8 +66,7 @@ export default function Agenda() {
     load();
   }
 
-  // Combina agendamentos e bloqueios numa única lista ordenada por horário,
-  // aplicando os filtros de status e busca.
+  // Agendamentos e bloqueios numa lista única ordenada por horário.
   const rows = useMemo(() => {
     const apptRows = appointments.map((a) => ({ type: "appointment", data: a, startsAt: a.startsAt }));
     const blockRows = blocks.map((b) => ({ type: "block", data: b, startsAt: b.startsAt }));

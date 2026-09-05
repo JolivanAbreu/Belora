@@ -29,19 +29,15 @@ app.use(express.json());
 
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
-// --- Rotas públicas (booking page) - resolução de tenant por slug ---
-// O prefixo "/public/:tenantSlug" garante que req.params.tenantSlug já
-// exista quando publicTenantMiddleware roda, então req.tenantId fica
-// disponível para todas as rotas montadas em seguida (mergeParams: true).
-// publicRateLimiter roda antes do middleware de tenant, para limitar por IP
-// mesmo contra slugs inexistentes (evita usar a resolução de tenant como
-// vetor de scraping).
+// Rotas públicas da booking page.
+// O rate limiter roda antes do middleware de tenant para limitar por IP
+// mesmo em requisições com slug inexistente.
 app.use("/public/:tenantSlug", publicRateLimiter, publicTenantMiddleware, servicesPublicRoutes);
 app.use("/public/:tenantSlug", publicRateLimiter, publicTenantMiddleware, appointmentsPublicRoutes);
 app.use("/public/:tenantSlug", publicRateLimiter, publicTenantMiddleware, tenantsPublicRoutes);
 
-// --- Rotas autenticadas (painel admin) - tenant resolvido pelo JWT ---
-app.use(authRoutes); // /auth/login e /auth/refresh não exigem token
+// Rotas autenticadas do painel admin.
+app.use(authRoutes);
 app.use(authMiddleware, twoFactorRoutes);
 app.use(authMiddleware, tenantsRoutes);
 app.use(authMiddleware, servicesRoutes);
@@ -50,6 +46,6 @@ app.use(authMiddleware, appointmentsRoutes);
 app.use(authMiddleware, notificationsRoutes);
 app.use(authMiddleware, reportsRoutes);
 
-app.use(errorHandler); // sempre por último
+app.use(errorHandler);
 
 module.exports = app;

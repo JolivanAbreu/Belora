@@ -2,9 +2,7 @@ const { formatInTimeZone } = require("date-fns-tz");
 const { NotificationLog, Appointment, Client, Service } = require("../../models");
 const { getWhatsAppProvider } = require("../../integrations/whatsapp");
 
-/**
- * Lista o histórico de notificações do tenant.
- */
+// Histórico de notificações do tenant.
 async function list(tenantId, { appointmentId } = {}) {
   const where = { tenantId };
   if (appointmentId) where.appointmentId = appointmentId;
@@ -17,10 +15,9 @@ async function list(tenantId, { appointmentId } = {}) {
   });
 }
 
-// Templates padrão usados quando o tenant não personalizou um tipo em
-// tenant.messageTemplates (tela Configurações). Placeholders disponíveis:
-// {cliente} {servico} {data} {hora} {estabelecimento} {endereco}
-// {link_cancelamento} {link_confirmacao}
+// Usados quando o tenant não personalizou o template em Configurações.
+// Placeholders: {cliente} {servico} {data} {hora} {estabelecimento}
+// {endereco} {link_cancelamento} {link_confirmacao}
 const DEFAULT_MESSAGE_TEMPLATES = {
   confirmation:
     "Olá, {cliente}! Seu agendamento de {servico} foi confirmado para {data} às {hora}, " +
@@ -39,21 +36,15 @@ const DEFAULT_MESSAGE_TEMPLATES = {
 
 const TYPES_WITH_CONFIRM_LINK = new Set(["reminder_30min"]);
 
-// URLs base dos apps públicos/administrativos (ver DEPLOY.md e .env.example).
+
 const PUBLIC_BOOKING_URL = process.env.PUBLIC_BOOKING_URL || "http://localhost:5174";
 
 function renderTemplate(template, values) {
   return template.replace(/\{(\w+)\}/g, (match, key) => (key in values ? values[key] : match));
 }
 
-/**
- * Envia (via provedor configurado) e registra uma notificação de um tipo
- * específico para um agendamento. Nunca lança exceção: falha de envio é
- * registrada no log do servidor e simplesmente não grava a notificação
- * (permitindo que o job de varredura tente de novo na próxima passada).
- *
- * @param {"confirmation"|"reminder_24h"|"reminder_2h"|"reminder_30min"} type
- */
+// Envia e registra a notificação. Falha de envio não grava o log, o que
+// permite ao job de varredura tentar de novo na próxima passada.
 async function sendAndLog(appointment, type) {
   const client = appointment.Client;
   const service = appointment.Service;

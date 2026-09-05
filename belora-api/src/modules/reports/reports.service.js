@@ -2,13 +2,8 @@ const { Op } = require("sequelize");
 const { fromZonedTime, formatInTimeZone } = require("date-fns-tz");
 const { Appointment, Service, Tenant } = require("../../models");
 
-/**
- * Gera os últimos N meses como strings "yyyy-MM", terminando no mês atual
- * (visto no fuso horário do tenant), usando apenas aritmética inteira de
- * ano/mês - nunca reconstruindo um Date a partir de componentes locais e
- * reformatando em outro fuso, o que desalinharia o mês perto da virada
- * (bug real encontrado e corrigido: ver Plano de Testes).
- */
+// Usa aritmética inteira de ano/mês. Reconstruir um Date a partir de
+// componentes locais e reformatar em outro fuso desalinha o mês na virada.
 function lastMonthKeys(count, timezone) {
   const [currentYear, currentMonth] = formatInTimeZone(new Date(), timezone, "yyyy-MM")
     .split("-")
@@ -24,18 +19,9 @@ function lastMonthKeys(count, timezone) {
   return keys;
 }
 
-/**
- * Calcula faturamento mensal e taxa de não comparecimento dos últimos N
- * meses (padrão 6), agrupados por mês no fuso horário do tenant.
- *
- * Definições:
- * - Faturamento de um mês: soma do preço do serviço de todo agendamento
- *   "concluído" com startsAt naquele mês (agendamentos cancelados ou ainda
- *   confirmados/futuros não contam como faturamento realizado).
- * - Taxa de não comparecimento: nao_compareceu / (concluido + nao_compareceu)
- *   no mês - cancelamentos feitos com antecedência não contam como falta,
- *   já que o cliente avisou.
- */
+// Faturamento considera apenas agendamentos concluídos.
+// Taxa de falta = nao_compareceu / (concluido + nao_compareceu):
+// cancelamentos com antecedência não entram na conta.
 async function getMonthlySummary(tenantId, months = 6) {
   const tenant = await Tenant.findByPk(tenantId);
   const timezone = tenant?.timezone || "America/Fortaleza";
@@ -59,7 +45,7 @@ async function getMonthlySummary(tenantId, months = 6) {
 
   for (const appt of appointments) {
     const key = formatInTimeZone(appt.startsAt, timezone, "yyyy-MM");
-    if (!byMonth[key]) continue; // fora do intervalo solicitado (segurança)
+    if (!byMonth[key]) continue;
 
     if (appt.status === "concluido") {
       byMonth[key].completed += 1;
@@ -79,10 +65,7 @@ async function getMonthlySummary(tenantId, months = 6) {
   return { months: monthly };
 }
 
-/**
- * Ranking de serviços por faturamento no período (últimos N meses),
- * considerando apenas agendamentos concluídos.
- */
+// Ranking por faturamento, considerando apenas agendamentos concluídos.
 async function getTopServices(tenantId, months = 6) {
   const tenant = await Tenant.findByPk(tenantId);
   const timezone = tenant?.timezone || "America/Fortaleza";

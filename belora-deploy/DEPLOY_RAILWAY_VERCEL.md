@@ -121,8 +121,7 @@ Etapa 4 para apontar o domínio.
 2. **Faça upgrade para o plano Pro** antes de publicar de verdade: Vercel
    → ícone do seu time (canto superior esquerdo) → **Settings** → **Billing**
    → **Change Plan** → **Pro** (US$20/mês). Isso é necessário porque o
-   plano Hobby (grátis) proíbe uso comercial nos termos de serviço, e o
-   Belora vai gerar receita para a Nicolly.
+   plano Hobby (grátis) proíbe uso comercial nos termos de serviço.
 3. **Add New** → **Project** → importe o repositório `belora` do GitHub.
 4. Configure o primeiro projeto (**painel admin**):
    - **Root Directory**: `belora-admin`
@@ -197,10 +196,9 @@ continuariam apontando para as URLs antigas da Vercel/Railway.
 - [ ] Testar o login no painel admin com o usuário criado pelo seed.
 - [ ] Testar um agendamento completo pela booking page pública.
 - [ ] Ajustar nome, horário de funcionamento, endereço e fuso horário do
-      tenant da Nicolly na tela **Configurações** (o seed cria valores
-      genéricos de exemplo).
-- [ ] Avisar a Nicolly da URL do painel e criar/trocar a senha dela.
-- [ ] Colocar o link da booking page na bio do Instagram.
+      tenant na tela **Configurações** (o seed cria valores de exemplo).
+- [ ] Trocar a senha padrão do usuário criado pelo seed.
+- [ ] Divulgar o link da booking page para as clientes.
 
 ---
 
@@ -213,10 +211,6 @@ continuariam apontando para as URLs antigas da Vercel/Railway.
 | Vercel Pro (2 projetos) | US$ 20/mês ≈ R$ 103/mês |
 | **Total mensal aproximado** | **≈ R$ 154-232/mês** |
 
-> Nota: eu não tenho acesso de rede à Railway, Vercel ou aos registradores
-> de domínio a partir deste ambiente, então não consegui testar estes
-> passos clicando por clique como fiz com o restante do código do projeto.
-> As instruções seguem a documentação pública de cada plataforma no momento
-> em que este guia foi escrito - se alguma tela estiver diferente do
-> descrito aqui (essas empresas mudam a interface com frequência), me
-> mostre o que está vendo que eu ajudo a adaptar o passo a passo.
+> As instruções seguem a documentação pública de cada plataforma. Railway e
+> Vercel mudam a interface com frequência, então alguma tela pode estar
+> diferente do descrito aqui.

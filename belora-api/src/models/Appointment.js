@@ -18,17 +18,13 @@ const Appointment = sequelize.define("Appointment", {
     type: DataTypes.STRING,
     allowNull: false,
     defaultValue: () => crypto.randomBytes(20).toString("hex"),
-    // Token opaco usado no link de cancelamento (RF-34) enviado na
-    // confirmação por WhatsApp. Não é o UUID do agendamento de propósito -
-    // mesmo que alguém adivinhe/enumere IDs sequenciais de outra forma,
-    // ainda precisaria deste token para cancelar em nome do cliente.
+    // Usado no link de cancelamento enviado por WhatsApp. Separado do UUID
+    // de propósito: enumerar IDs não basta para cancelar em nome do cliente.
   },
   presenceConfirmedAt: {
     type: DataTypes.DATE,
     allowNull: true,
-    // Preenchido quando o cliente confirma presença pelo link enviado no
-    // lembrete de 30min antes (ver reminder_30min). Usa o mesmo
-    // cancellationToken como chave de autorização - não é um segredo novo.
+    // Preenchido quando o cliente confirma presença pelo lembrete de 30min.
   },
 }, {
   tableName: "appointments",

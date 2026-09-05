@@ -6,7 +6,7 @@ const Client = sequelize.define("Client", {
   tenantId: { type: DataTypes.UUID, allowNull: false },
   name: { type: DataTypes.STRING, allowNull: false },
   phone: { type: DataTypes.STRING, allowNull: false },
-  notes: { type: DataTypes.TEXT, allowNull: true }, // dado sensível - ver Segurança & LGPD, seção 4
+  notes: { type: DataTypes.TEXT, allowNull: true },
 }, {
   tableName: "clients",
   timestamps: true,

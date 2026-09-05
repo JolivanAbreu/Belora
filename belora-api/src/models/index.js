@@ -10,7 +10,7 @@ const Appointment = require("./Appointment");
 const AvailabilityBlock = require("./AvailabilityBlock");
 const NotificationLog = require("./NotificationLog");
 
-// --- Associações (ver Modelo de Dados / ERD) ---
+
 
 Plan.hasMany(Tenant, { foreignKey: "planId" });
 Tenant.belongsTo(Plan, { foreignKey: "planId" });

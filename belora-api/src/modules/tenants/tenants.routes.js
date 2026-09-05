@@ -7,7 +7,7 @@ const router = Router();
 
 const SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-// GET /tenant/me - sempre usa req.user.tenantId, nunca um :id na URL
+// Sempre usa req.user.tenantId, nunca um :id vindo da URL.
 router.get("/tenant/me", async (req, res) => {
   const tenant = await Tenant.findByPk(req.user.tenantId);
   if (!tenant) throw new AppError(404, "TENANT_NOT_FOUND", "Tenant não encontrado.");
@@ -36,8 +36,7 @@ router.patch("/tenant/me", async (req, res) => {
   if (timezone !== undefined) tenant.timezone = timezone;
   if (address !== undefined) tenant.address = address;
   if (messageTemplates !== undefined) {
-    // Merge raso: permite atualizar só um tipo de template por vez sem
-    // precisar reenviar os outros já customizados.
+    // Merge raso: permite atualizar um template sem reenviar os outros.
     tenant.messageTemplates = { ...tenant.messageTemplates, ...messageTemplates };
   }
   await tenant.save();

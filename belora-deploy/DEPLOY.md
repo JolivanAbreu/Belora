@@ -10,10 +10,9 @@ comercial sem restrição, e dá pra ter tudo rodando em uns 20 minutos.
   variável como a Railway), então o valor mensal não surpreende.
 - **Uso comercial liberado de graça**: o plano gratuito da Cloudflare Pages
   permite uso comercial. Já o plano gratuito da Vercel (Hobby) **proíbe uso
-  comercial** nos termos de serviço — como o Belora é um negócio de verdade
-  (a Nicolly cobra pelos procedimentos), usar o Hobby da Vercel seria uma
-  violação técnica dos termos, obrigando a ir direto para o Vercel Pro
-  (US$20/mês, ≈ R$103/mês) só para hospedar dois sites estáticos simples.
+  comercial** nos termos de serviço — se o sistema gera receita, seria
+  necessário ir para o Vercel Pro (US$20/mês, ≈ R$103/mês) só para hospedar
+  dois sites estáticos.
 - **Estimativa de custo** (câmbio de referência ≈ R$5,15/USD, agosto/2026 —
   confira a cotação atual antes de orçar):
 
@@ -59,8 +58,8 @@ git push -u origin main
 
 1. Crie uma conta em render.com e conecte seu GitHub.
 2. **New → PostgreSQL**: crie um banco no plano **Starter** (não o Free — o
-   Postgres gratuito da Render expira 30 dias após a criação, o que apagaria
-   os dados de verdade da Nicolly). Anote a "Internal Database URL" gerada.
+   Postgres gratuito da Render expira 30 dias após a criação, apagando os
+   dados). Anote a "Internal Database URL" gerada.
 3. **New → Web Service**: aponte para o repositório, com:
    - **Root Directory**: `belora-api`
    - **Instance Type**: **Starter** (US$7/mês) — o plano Free hiberna após
@@ -107,8 +106,8 @@ Ao final você terá três URLs públicas, por exemplo:
 Volte na Render e preencha `PUBLIC_BOOKING_URL` com a URL real da booking
 page (usada nos links de cancelamento/confirmação enviados por WhatsApp).
 
-A Nicolly usa a URL do painel admin para logar, e coloca a URL da booking
-page (com o slug dela no final) na bio do Instagram.
+A profissional usa a URL do painel admin para entrar, e divulga a URL da
+booking page (com o slug ao final) para as clientes.
 
 ### Domínio próprio (opcional)
 
@@ -170,10 +169,10 @@ foge do escopo do MVP, mas é um passo padrão de qualquer deploy em VPS.
 
 ## Depois de qualquer uma das duas opções
 
-- [ ] Compartilhe a URL do painel admin com a Nicolly e o login criado no seed
-      (ou crie um usuário novo para ela via `npm run db:seed` customizado).
-- [ ] Ajuste `businessHours`, `timezone` e `address` do tenant dela, se
-      diferente do padrão usado no seed (via tela Configurações do painel).
+- [ ] Compartilhe a URL do painel admin e as credenciais de acesso com a
+      profissional, trocando a senha padrão do seed.
+- [ ] Ajuste nome, horários, endereço e fuso horário do tenant na tela
+      Configurações do painel.
 - [ ] Configure `CORS` no backend para aceitar apenas os domínios reais do
       painel/booking page em produção, ao invés do `cors()` aberto usado no
       MVP (ver `src/app.js`) — pequeno endurecimento de segurança recomendado

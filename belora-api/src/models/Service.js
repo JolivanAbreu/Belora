@@ -13,7 +13,7 @@ const Service = sequelize.define("Service", {
 }, {
   tableName: "services",
   timestamps: true,
-  paranoid: true, // soft-delete - preferir desativar (active=false) a excluir, ver Modelo de Dados seção 5
+  paranoid: true,
   indexes: [{ fields: ["tenant_id", "active"] }],
 });
 

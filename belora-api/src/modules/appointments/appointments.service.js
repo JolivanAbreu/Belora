@@ -4,46 +4,24 @@ const { sequelize, Appointment, AvailabilityBlock, Service, Client, Tenant } = r
 const { AppError } = require("../../middlewares/errorHandler");
 const notificationsService = require("../notifications/notifications.service");
 
-/**
- * Interpreta uma string de data/hora recebida da API.
- *
- * Duas origens possíveis:
- * - Vem da booking page pública, ecoando de volta um horário já calculado
- *   por availability.service (sempre um instante UTC absoluto, terminado em
- *   "Z") - nesse caso não há ambiguidade, é só um Date direto.
- * - Vem do painel admin (criação manual de agendamento/bloqueio), como hora
- *   LOCAL do tenant, sem "Z" (ex.: "2026-08-24T13:00:00") - precisa ser
- *   convertida para instante UTC usando o fuso do tenant.
- *
- * Ver Documento de Arquitetura / correção de fuso horário.
- */
+// Strings com "Z" ou offset explícito já são instantes absolutos.
+// Sem sufixo, o valor é hora local do tenant e precisa ser convertido.
 function parseTenantDateTime(value, timezone) {
   if (!value || typeof value !== "string") {
     throw new Error("invalid datetime");
   }
   if (/Z$|[+-]\d{2}:?\d{2}$/.test(value)) {
-    return new Date(value); // já é um instante absoluto (UTC ou com offset explícito)
+    return new Date(value);
   }
   return fromZonedTime(value, timezone);
 }
 
-/**
- * Cria um agendamento garantindo ausência de conflito de horário, mesmo sob
- * concorrência (duas pessoas tentando marcar o mesmo horário ao mesmo tempo -
- * ver TC-10 do Plano de Testes).
- *
- * Estratégia: advisory lock do Postgres por tenantId dentro da transação.
- * Isso serializa a criação de agendamentos de um MESMO tenant sem travar
- * tenants diferentes entre si (o lock é tomado por hash do tenantId).
- *
- * @param {string} tenantId - SEMPRE resolvido pelo middleware de auth/tenant, nunca recebido do client.
- * @param {object} input - { serviceId, startsAt, clientId? , client?: { name, phone } }
- */
+// Usa advisory lock por tenant para impedir conflito de horário sob
+// concorrência, sem bloquear a agenda de outros tenants.
 async function createAppointment(tenantId, input) {
   let context;
 
   const appointment = await sequelize.transaction(async (t) => {
-    // Serializa criação de agendamentos deste tenant durante a transação
     await sequelize.query("SELECT pg_advisory_xact_lock(hashtext(:tenantId))", {
       replacements: { tenantId },
       transaction: t,
@@ -111,11 +89,7 @@ async function createAppointment(tenantId, input) {
     return created;
   });
 
-  // Fora da transação (já commitada com sucesso). O envio da confirmação
-  // por WhatsApp roda em "fire-and-forget": não bloqueia a resposta da API
-  // esperando o provedor externo, e uma falha de envio nunca desfaz um
-  // agendamento que já foi criado com sucesso (ver Documento de
-  // Arquitetura - notificações são desacopladas da criação do agendamento).
+  // Envio fire-and-forget: falha de notificação não desfaz o agendamento.
   appointment.Tenant = context.tenant;
   appointment.Service = context.service;
   appointment.Client = context.client;
@@ -166,12 +140,8 @@ async function cancelAppointment(tenantId, appointmentId) {
   return appointment;
 }
 
-/**
- * Cancelamento pelo CLIENTE FINAL (RF-34), via link enviado na confirmação
- * por WhatsApp - não exige login, apenas o token opaco gerado junto com o
- * agendamento (ver Appointment.cancellationToken). tenantId ainda vem do
- * slug validado pelo publicTenantMiddleware, nunca de um parâmetro solto.
- */
+// Cancelamento pelo cliente final, autorizado pelo token do link enviado
+// por WhatsApp. Não exige login.
 async function cancelAppointmentByToken(tenantId, appointmentId, token) {
   const appointment = await Appointment.findOne({ where: { id: appointmentId, tenantId } });
   if (!appointment) {
@@ -188,12 +158,8 @@ async function cancelAppointmentByToken(tenantId, appointmentId, token) {
   return appointment;
 }
 
-/**
- * Confirmação de presença pelo cliente (via link enviado no lembrete de
- * 30min antes). Usa o mesmo token de cancelamento como chave de
- * autorização - não expõe nenhum dado novo, só sinaliza pro admin que o
- * cliente confirmou que vai comparecer.
- */
+// Confirmação de presença pelo cliente, via link do lembrete de 30min.
+// Reutiliza o token de cancelamento como chave de autorização.
 async function confirmPresenceByToken(tenantId, appointmentId, token) {
   const appointment = await Appointment.findOne({ where: { id: appointmentId, tenantId } });
   if (!appointment) {
@@ -210,13 +176,8 @@ async function confirmPresenceByToken(tenantId, appointmentId, token) {
   return appointment;
 }
 
-/**
- * Exclusão PERMANENTE de um agendamento (diferente de cancelAppointment,
- * que só muda o status para "cancelado" preservando o histórico). Usada
- * quando o admin realmente quer remover um registro (ex.: engano de
- * cadastro), não apenas marcar como cancelado. Remove também as
- * notificações associadas via ON DELETE CASCADE (ver Modelo de Dados).
- */
+// Remove o registro do banco. Diferente de cancelAppointment, que apenas
+// muda o status e preserva o histórico.
 async function deleteAppointmentPermanently(tenantId, appointmentId) {
   const appointment = await Appointment.findOne({ where: { id: appointmentId, tenantId } });
   if (!appointment) {
@@ -227,12 +188,8 @@ async function deleteAppointmentPermanently(tenantId, appointmentId) {
 
 const VALID_STATUSES = ["confirmado", "cancelado", "concluido", "nao_compareceu"];
 
-/**
- * Atualiza o status de um agendamento (RF-25 - complementa o cancelamento):
- * permite ao admin marcar um atendimento passado como "concluído" ou
- * "não compareceu", o que alimenta os relatórios de faturamento e taxa de
- * não comparecimento (ver módulo reports).
- */
+// Marcar um atendimento como concluído ou não compareceu alimenta os
+// relatórios de faturamento e taxa de não comparecimento.
 async function updateAppointmentStatus(tenantId, appointmentId, status) {
   if (!VALID_STATUSES.includes(status)) {
     throw new AppError(400, "INVALID_STATUS", `Status deve ser um de: ${VALID_STATUSES.join(", ")}.`);

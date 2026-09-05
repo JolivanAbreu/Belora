@@ -20,7 +20,7 @@ async function update(tenantId, serviceId, data) {
   return service;
 }
 
-// Soft-delete: preferir desativar a excluir de fato (ver Modelo de Dados, seção 5)
+// Desativa em vez de excluir, preservando o histórico de agendamentos.
 async function deactivate(tenantId, serviceId) {
   const service = await Service.findOne({ where: { id: serviceId, tenantId } });
   if (!service) throw new AppError(404, "SERVICE_NOT_FOUND", "Serviço não encontrado para este tenant.");

@@ -3,9 +3,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import Modal from "./Modal";
 import api from "../lib/api";
 
-// Gera a lista de datas (yyyy-MM-dd) entre startDate e endDate, inclusive,
-// usada para criar um bloqueio em vários dias de uma vez (ex.: período de
-// férias, feriado prolongado).
+// Datas (yyyy-MM-dd) entre startDate e endDate, inclusive.
 function eachDateInRange(startDate, endDate) {
   const dates = [];
   let cursor = new Date(`${startDate}T00:00:00`);
@@ -48,7 +46,7 @@ export default function BlockTimeModal({ date, block, timezone, onClose, onCreat
     setSaving(true);
     try {
       if (isEditing) {
-        // Ao editar, reaproveita a data original do bloqueio (não o filtro da tela).
+        // Reaproveita a data original do bloqueio, não o filtro da tela.
         const blockDate = formatInTimeZone(block.startsAt, timezone, "yyyy-MM-dd");
         await api.patch(`/availability-blocks/${block.id}`, {
           startsAt: `${blockDate}T${from}:00`,
@@ -56,8 +54,7 @@ export default function BlockTimeModal({ date, block, timezone, onClose, onCreat
           reason: reason || undefined,
         });
       } else {
-        // Cria um bloqueio por dia no intervalo selecionado (mesmo horário
-        // todos os dias) - hora LOCAL do tenant, sem "Z".
+        // Um bloqueio por dia no intervalo, em hora local do tenant.
         const dates = eachDateInRange(fromDate, toDate);
         await Promise.all(
           dates.map((d) =>

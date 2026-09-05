@@ -1,11 +1,7 @@
 import { IMaskInput } from "react-imask";
 
-/**
- * Campo de telefone/WhatsApp com máscara brasileira (+55 (DD) 90000-0000).
- * Ver mesma implementação em belora-admin/src/components/PhoneInput.jsx -
- * duplicado aqui porque os dois frontends não compartilham código (projetos
- * separados, sem monorepo).
- */
+// Campo de telefone com máscara brasileira.
+// Duplicado do belora-admin: os projetos não compartilham código.
 export default function PhoneInput({ value, onChange, className, required, placeholder }) {
   return (
     <IMaskInput

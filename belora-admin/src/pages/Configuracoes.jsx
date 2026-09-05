@@ -43,11 +43,8 @@ const TEMPLATE_FIELDS = [
   { key: "reminder_30min", label: "Lembrete — 30min antes (com confirmação de presença)" },
 ];
 
-// Constrói o estado inicial de cada dia a partir do businessHours atual do
-// tenant. Simplificação consciente: a tela edita um único intervalo por
-// dia (aberto: de-até). O modelo do backend suporta múltiplos intervalos
-// por dia (ex.: pausa de almoço separada), mas isso ainda não tem
-// interface própria - ver README, "o que falta antes de produção".
+// A tela edita um único intervalo por dia. O backend suporta múltiplos
+// intervalos, mas isso ainda não tem interface.
 function buildInitialDaysState(businessHours) {
   const state = {};
   for (const { key } of WEEK_DAYS) {
